@@ -14,16 +14,27 @@ These instructions have been tested on Ubuntu 12.04. Other distributions or vers
 
 Run the following commands in the PMP simulator directory to build everything:
 
-    ```
-    $ make
-    ```
+```
+$ make
+```
 
 # Running
+1. assembly the microprogram
 
     ```
-    $ make
+    $ ./rasm -f source_file
     ```
 
+    This will create a output .text file with the binary executable code and a .data file with the memory data section.
+
+2. launch the PMP simulator
+
+    ```
+    $ ./rsim -p trace.pcap -t program.t -d program.d 
+
+    ```
+
+    The simulator will parse the packet trace trace.pcap and will launch the PMP simulator that will execute the program in program.t with data program.d
 
 # Contribute
 
