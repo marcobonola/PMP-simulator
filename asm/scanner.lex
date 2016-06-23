@@ -103,6 +103,7 @@ ws       [ \t]+
 "la"       {return LOADADDR;  }
 "lb"       {return LOADBYTE;  }
 "lw"       {return LOADWORD;  }
+"lwf"      {return LOADWORDF; }
 "ld"       {return LOAD;      }
 "li"       {return LOADIMMED; }
 "outb"     {return OUTBYTE;   }

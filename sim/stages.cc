@@ -62,6 +62,7 @@ void InstructionDecodeStage::Execute()
 }
 
 
+int32_t carry=0;
 void ExecuteStage::Execute()
 {
 	uint32_t param;
@@ -83,9 +84,9 @@ void ExecuteStage::Execute()
 	int32_t svalue = left.Rsrc1Val;
 	int32_t sparam = *(int32_t *)&param;
 	int32_t result = sparam;
-	int32_t res_carry=0;
+	//int32_t res_carry=0;
 
-	int32_t carry= (0x00000001 & left.flags); 
+	//int32_t carry= (0x00000001 & left.flags); 
 
 //debug	    
 //	printf("\n EXE (param) %02X (value) %02X \n", param, svalue);
@@ -113,6 +114,7 @@ void ExecuteStage::Execute()
                         core->PC = core->PC-8; 
         }
 
+        int64_t reslong;
 	switch (left.control()->alu_operation) {
 	case 0:
 		// do nothing, this operation does not require an alu op (copy forward)
@@ -121,10 +123,14 @@ void ExecuteStage::Execute()
 	case 1:
 		// do a signed add of reg1 to param
 		result = svalue + sparam;
-	        res_carry= 0;
-	        //if (result>(1<<32)) res_carry= 1;
+                reslong=  (uint64_t)(0x00000000ffffffff & svalue) + 
+                          (uint64_t)(0x00000000ffffffff & sparam ) +
+                          (uint64_t)(0x00000000ffffffff & carry );
+	        carry= 0;
+                if (reslong>(0x00000000ffffffff)) {
+                    carry= 1;
+                }
 		break;
-
 	case 2:
 		// do a signed subtract of param from reg1
 		result = svalue - sparam;
@@ -152,14 +158,21 @@ void ExecuteStage::Execute()
 	case 8:
 		// do ADC of reg1 with param
 		result = svalue + sparam + carry;
+                reslong=  (uint64_t)(0x00000000ffffffff & svalue) + 
+                          (uint64_t)(0x00000000ffffffff & sparam ) +
+                          (uint64_t)(0x00000000ffffffff & carry );
+	        carry= 0;
+                if (reslong>(0x00000000ffffffff)) {
+                    carry= 1;
+                }
 		break;
 	case 9:
-		// do ADC of reg1 with param
+		// do NOT of reg1 
 		result = svalue ^0xffffffff;
 		break;
 	}
 	right.aluresult = *(uint32_t *)&result;
-	right.flags = *(uint32_t*) &res_carry;
+	right.flags = *(uint32_t*) &carry;
 
 //DEBUG
 
@@ -263,6 +276,10 @@ void MemoryStage::Execute()
 		else if (control->mem_read == 4) {
 			right.mem_data = core->mem->get<uint32_t>(left.aluresult);
 		}
+		else if (control->mem_read == 104) {
+			right.mem_data = core->mem->getf<uint32_t>(left.aluresult);
+			//right.mem_data = core->mem->get<uint32_t>(left.aluresult);
+		}
 	}
 	else if (control->mem_write) {
 		if (control->mem_write == 1) {
@@ -365,6 +382,8 @@ void ExecuteStage::Resolve()
 	if (core->exs.right.Rdest != 0 && core->exs.right.control()->register_write) {
 		if (core->exs.right.Rdest == core->ids.right.Rsrc1) {
 			core->ids.right.Rsrc1Val = core->exs.right.aluresult;
+			//added forwarding of flags
+                        //core->ids.right.flags = core->exs.right.flags;
 			if (core->verbose) printf("\033[34m*** FORWARDex1\033[0m:  %08x going to ID/EX's Rsrc1Val \n",
 				                       core->exs.right.aluresult);
 		}

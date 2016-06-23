@@ -14,7 +14,7 @@ short inline PACK_OPERANDS(byte x, byte y, byte z) {
   }
 %}
 %token NEWLINE TEXT_SECTION DATA_SECTION LABELDECL INTEGER LABELREF REGISTER INVALID_REGISTER
-%token SLR ANDI AND OR XOR XNOR ADDI ADD ADC SUB SUBI BRANCH BRANCHEQZ BRANCHGE BRANCHNE LOAD LOADADDR LOADBYTE LOADWORD LOADIMMED SYSCALL NOOP STORE STOREHALF STOREWORD OUTLOOP OUTLOOPA NOT
+%token SLR ANDI AND OR XOR XNOR ADDI ADD ADC SUB SUBI BRANCH BRANCHEQZ BRANCHGE BRANCHNE LOAD LOADADDR LOADBYTE LOADWORDF LOADWORD LOADIMMED SYSCALL NOOP STORE STOREHALF STOREWORD OUTLOOP OUTLOOPA NOT
 %token OUTBYTE OUTHALF OUTWORD OUT6B OUTDOUBLE OUTQUAD
 %token WORD BYTE SPACE ASCII ASCIIZ STRING SECTION_IDENT
 //%token OP
@@ -108,6 +108,11 @@ instruction :  NOOP {
                rdest ',' { cgen->emit<uint16_t>(PACK_OPERANDS($3, 0, 0)); } 
                address
              | LOADWORD  { cgen->emit<byte>(6); }
+               rdest ',' offset    { 
+                 cgen->emit<uint16_t>(PACK_OPERANDS($3, $5.reg, 0)); 
+                 cgen->emit<uint32_t>($5.offset);
+               }
+             | LOADWORDF { cgen->emit<byte>(33); }
                rdest ',' offset    { 
                  cgen->emit<uint16_t>(PACK_OPERANDS($3, $5.reg, 0)); 
                  cgen->emit<uint32_t>($5.offset);

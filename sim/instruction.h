@@ -62,6 +62,7 @@ const instruction instructions [64] =
   ,{ "  outwh", NULL,     false, 0, 2, false, 6, 6, false }     // 1E TBC
   ,{ "    not", NULL,     true,  9, 0, false, 0, 0, false }     // 1F TBC
   ,{ "    sth", NULL,     false, 0, 2, false, 2, 0, false }     // 20 TBC
+  ,{ "    lwf", NULL,     true,  0, 2, false, 0,104, true  }     // 06  TBC
   }; 
 
 #endif /* _INSTRUCTION_H_ */

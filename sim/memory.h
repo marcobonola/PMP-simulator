@@ -68,10 +68,29 @@ public:
 	// and be byte-addressable.
 	template <class T>
 	T get(uint32_t addr)
+	//T getnf(uint32_t addr)
 	{
 		byte buff[sizeof(T)];
 
 		memcpy(buff, crackaddr(addr), sizeof(T));
+
+		if (collectstats) {
+			readhits++;
+			bytesout += sizeof(T);
+		}
+		return *(T *)buff;
+	}
+	template <class T>
+	T getf(uint32_t addr)
+	//T get(uint32_t addr)
+	{
+		byte buff[sizeof(T)];
+
+		//memcpy(buff, crackaddr(addr), sizeof(T));
+                for (unsigned int i=0; i<sizeof(T); i++) {
+		    memcpy(buff+i,crackaddr(addr)+ sizeof(T)-i-1,1);
+                }
+
 		if (collectstats) {
 			readhits++;
 			bytesout += sizeof(T);
@@ -82,8 +101,26 @@ public:
 
 	template <class T>
 	void set(uint32_t addr, T value)
+	//void setnf(uint32_t addr, T value)
 	{
 		memcpy(crackaddr(addr), &value, sizeof(T));
+
+		if (collectstats) {
+			writehits++;
+			bytesin += sizeof(T);
+		}
+	}
+
+	template <class T>
+	void setf(uint32_t addr, T value)
+	//void set(uint32_t addr, T value)
+	{
+		//memcpy(crackaddr(addr), &value, sizeof(T));
+		byte* buff= (byte*) &value;
+                for (unsigned int i=0; i<sizeof(T); i++) {
+		    memcpy(crackaddr(addr)+ sizeof(T)-i-1,buff+i,1);
+                }
+
 		if (collectstats) {
 			writehits++;
 			bytesin += sizeof(T);
