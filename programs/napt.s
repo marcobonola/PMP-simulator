@@ -1,30 +1,31 @@
 # The SendIN function is the NATP function for packet going
 # to the outside network.
-# It change the SRC IP/PORT of the TCP/UDP packets.
+# It change the SRC IP/PORT of the UDP packets.
+# (for TCP packet the only difference is the position of the TCP checksum)
+# The incremental csum computation is based on the following formula:
+# newCSUM = (oldCSum' + oldFieldSum' + newFieldSum)'
+# where ' is the NOT operation
 
 # Start .text segment (program code)
 .text
 
 SendIN:
- la $1,out_dmac      #1
-
+ la $1,out_dmac
  li $2, 20 # print reg
  syscall
 
-
 #write the ethernet layer
- la $3,pkt_in       # $3<--in pkt                   #1
- li $2,14                                           #1
- outl $op,($1),$2                                   #3
-
-#load old IP csum in $12
-# lw  $12,24($3)                                     #1
-# not $12,$12                                        #1
+ la $3,pkt_in       # $3<--in pkt
+ li $2,14
+ outl $op,($1),$2
 
 #load old UDP csum in $13
- lw $13,40($3)                                      #1
+ lw $13,40($3)
 
-#compute IP delta csum (4 byte)                     #8
+#keep old IP in $21
+  lwf $21,26($3)
+
+#compute IP csum (4 byte) 
   sth 24($3),$0   #set csum to 0 
   lwf $5,14($3)
   lwf $6,18($3)
@@ -41,86 +42,79 @@ SendIN:
   add $10,$10,$9
   adc $10,$10,0
 
-
-  #shrink 32 bit csum in 16 bit csum
+#shrink 32 bit csum in 16 bit csum
   slr $9,$10,16
-  #andi $10,$10,0x0000ffff
+  andi $10,$10,0x0000ffff
   add $11,$10,$9
   adc $11,$11,0
   not $11,$11
 
 
-#  add $7,$6,$5
-#  add $7,$7,$5
-#  la $5,source_IP
-#  lw $6,($5)
-#  add $7,$7,$6
-#  lw $5,30($3)
-#  add $7,$7,$5
+#compute incremental UDP csum
+  #not (old udp_csum)
+  lwf $20,40($3)
+  not $20,$20
+  slr $20,$20,16
 
-#  slr $8,$7,16
-#  add $8,$8,$7
-#  adc $8,$8,0
+  #not old IP
+  not $28,$21
 
-# la  $5,source_IP                                
-# lw  $6,($5)
-# lw  $6,26($3)
-# not $6,$6
-# add $12,$12,$6
-# lw  $7,26($3)
-# not $7,$7
-# sub $12,$12,$7
-# slr $13,$12,16
-# add $13,$13,$12
-# adc $13,$13,0
-#  not $14,$8
+  #new IP in $8
+  add $28,$28,$8
+  adc $28,$28,0
 
-#new IP csum in $8                                  #1
-# add $8,$8,$12
+  slr $27,$28,16
+  andi $28,$28,0x0000ffff
+  add $22,$27,$28
+  adc $22,$22,0
 
-#compute L4 delta csum                              #9
-# la  $6,source_port                         
-# lw  $9,($6)
-# lw  $10,34($3)
-# add $11,$11,$10
-# add $11,$7,$10 
- 
- 
-# slr $12,$11,16
-# add $12,$12,$11
-# adc $12,$12,0
-# not $8,$11
+  #old port $23 
+  lwf $23,34($3)
+  not $23,$23
+  slr $23,$23,16
 
-#new L4 csum in $9                                  #1
-# add $9,$8,$13
+  #new port $24
+  la $21,source_port
+  lwf $24,($21)
+  slr $24,$24,16
 
-## set-up phase                                     #11
- li $2,10                                           
- outl $op,14($3),$2 
- la   $10,new_csum_1    #write new IP csum
- sth  ($10),$11        #write new IP csum
- lwf  $15,($10)
- slr  $16,$15,16
- lw   $17,($10)
+  #new UDP csum $12
+  add $13,$20,$22
+  adc $13,$13,0
+
+  add $13,$13,$23
+  adc $13,$13,0
+
+  add $13,$13,$24
+  adc $13,$13,0
+  not $13,$13
 
  li $2, 20 # print reg
  syscall
 
+## resume sending out the packet
+ li $2,10                                           
+ outl $op,14($3),$2     #send beginning of IP pkt
 
+ la   $10,new_csum_1    #write new IP csum
+ sth  ($10),$11         #write new IP csum
+
+ la   $12,new_csum_3    #write new UDP csum
+ sth  ($12),$13         #write new UDP csum
 
  outb $op,new_csum_2    #write new IP csum
  outb $op,new_csum_1    #write new IP csum
- outw $op,source_IP   #write new src IP
+ outw $op,source_IP     #write new src IP
  li $2,4
- outl $op,30($3),$2   #write dst IP
- outh $op,source_port #write new src port
+ outl $op,30($3),$2     #write dst IP
+ outh $op,source_port   #write new src port
  li $2,4
  outl $op,36($3),$2 
  
- sth  ($10),$9        #store new UDP csum
- outh $op,new_csum_1    #write UDP checksum
+ outb $op,new_csum_4    #write new UDP csum
+ outb $op,new_csum_3    #write new UDP csum
  
-# compute the number of bytes from UDP csum and eop     2 + lunghezza pacchetto 64 --> 4 1500---> 93   
+# compute the number of bytes from UDP csum to EOP
  ld   $2,pkt_len   # $3<--pkt_len
  subi $2,$2,42
  outl $op,42($3),$2  # out data to the output port
@@ -131,7 +125,6 @@ exit:
  syscall
 
 ## data segment
-
 .data
 
 #memory space for the pkt in
@@ -170,3 +163,5 @@ outer_ttl:  .byte 0x40
 IP_prot:    .byte 0x04
 new_csum_1: .byte 0x00
 new_csum_2: .byte 0x00
+new_csum_3: .byte 0x00
+new_csum_4: .byte 0x00
