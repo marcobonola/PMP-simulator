@@ -149,10 +149,9 @@ instruction :  NOOP {
                 cgen->emit<uint16_t>(PACK_OPERANDS($3, $5, $7)); 
                 cgen->emit<uint32_t>(0); }
              | OUTBYTE {cgen->emit<byte>(15);}
-               rdest ',' offset    { 
-                 cgen->emit<uint16_t>(PACK_OPERANDS($3, $5.reg, 0)); 
-                 cgen->emit<uint32_t>($5.offset);
-               }
+               rdest ',' { 
+                 cgen->emit<uint16_t>(0);
+               } address
              | OUTHALF {cgen->emit<byte>(16);}
                rdest ',' { 
                  cgen->emit<uint16_t>(0); 

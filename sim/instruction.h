@@ -55,7 +55,7 @@ const instruction instructions [64] =
   ,{ "     or", NULL,     true,  4, 0, false, 0, 0, false }     // 17 TBC
   ,{ "    xor", NULL,     true,  5, 0, false, 0, 0, false }     // 18 TBC
   ,{ "   xnor", NULL,     true,  6, 0, false, 0, 0, false }     // 19 TBC
-  ,{ "    slr", NULL,     true,  7, 0, false, 0, 0, false }     // 1A TBC
+  ,{ "    slr", NULL,     true,  7, 1, false, 0, 0, false }     // 1A TBC
   ,{ "    adc", NULL,     true,  8, 0, false, 0, 0, false }     // 1B TBC
   ,{ "   andi", NULL,     true,  3, 1, false, 0, 0, false }     // 1C TBC
   ,{ "    stw", NULL,     false, 0, 2, false, 4, 0, false }     // 1D TBC

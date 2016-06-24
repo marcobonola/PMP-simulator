@@ -153,6 +153,8 @@ void ExecuteStage::Execute()
 		break;
 	case 7:
 		// do SLR of reg1 with param
+
+        printf("SLR: svalue %x sparam %x",svalue, sparam);
 		result = svalue >> sparam;
 		break;
 	case 8:
