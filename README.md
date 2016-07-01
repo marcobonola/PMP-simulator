@@ -25,7 +25,7 @@ $ make
     $ ./rasm -f source_file
     ```
 
-    This will create a output .text file with the binary executable code and a .data file with the memory data section.
+    This will create a output .text file with the binary executable code (source_file.t) and a .data file with the memory data section (source_file.d).
 
 2. launch the PMP simulator
 
@@ -35,6 +35,23 @@ $ make
     ```
 
     The simulator will parse the packet trace trace.pcap and will launch the PMP simulator that will execute the program in program.t with data program.d
+
+# Examples  
+We provided two simple application examples (NAPT and ARP reply) for testing the PMP simulator. The examples read the one-packet trace provided in the pcaps directory, executes the application and writes in the out.pcap file the result. The two examples are:
+
+1. NAPT
+
+    ```
+    $ ./rasm -f programs/napt.s
+    $ ./rsim -p pcaps/udp.pcap -t programs/napt.t -d programs/napt.d 
+    ```
+
+2. ARP Reply
+
+```
+    $ ./rasm -f programs/arp.s
+    $ ./rsim -p pcaps/arp.pcap -t programs/arp.t -d programs/arp.d 
+    ```
 
 # Contribute
 
