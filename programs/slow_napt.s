@@ -15,9 +15,21 @@ SendIN:
  #syscall
 
 #write the ethernet layer
+# la $3,pkt_in       # $3<--in pkt
+# li $2,14
+# outl $op,($1),$2
+
  la $3,pkt_in       # $3<--in pkt
- li $2,14
- outl $op,($1),$2
+ la $5,op           # $5<--op
+ lw $4,($3)
+ stw ($5),$4
+ lw  $4,4($3)
+ stw ($5),$4
+ lw  $4,8($3)
+ stw ($5),$4
+ lw  $4,12($3)
+ sth ($5),$4
+
 
 #load old UDP csum in $13
  lw $13,40($3)
@@ -115,9 +127,21 @@ SendIN:
  outb $op,new_csum_3    #write new UDP csum
  
 # compute the number of bytes from UDP csum to EOP
- ld   $2,pkt_len   # $3<--pkt_len
+ ld   $2,pkt_len   # $2<--pkt_len
  subi $2,$2,42
- outl $op,42($3),$2  # out data to the output port
+ la $5,op           # $5<--op
+
+
+# loop to output the pkt
+loop:
+    bge $0,$2, end_loop # if $2 < 0, branch out of loop.
+    #beqz $2, end_loop # if $22 == 0, branch out of loop.
+    lw  $4,($3)
+    stw ($5),$4
+    subi $2,$2,4
+    addi $3,$3,4
+    b loop                   #loop
+end_loop:
 
 # exit: halt the PMP
 exit:
